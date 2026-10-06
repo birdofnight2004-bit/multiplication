@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>جدول الضرب التفاعلي</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    * { font-family: 'Tajawal', sans-serif; user-select: none; -webkit-user-select: none; }
+    .bg-gradient-custom { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #2563eb 100%); }
+    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    .btn-bounce:active { transform: scale(0.92); }
+  </style>
+</head>
+<body class="bg-gradient-custom min-h-screen text-slate-800 flex flex-col justify-between p-3 sm:p-6 overflow-x-hidden">
+
+  <!-- Header -->
+  <header class="flex justify-between items-center max-w-xl mx-auto w-full mb-4">
+    <div class="flex items-center space-x-2 space-x-reverse bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-white">
+      <span class="text-2xl">⭐</span>
+      <span id="totalScore" class="font-bold text-xl">0</span>
+    </div>
+    <h1 class="text-2xl sm:text-3xl font-black text-white text-center drop-shadow-md">جدول الضرب</h1>
+    <button onclick="switchView('home')" class="bg-white/20 backdrop-blur-md hover:bg-white/30 text-white p-2 rounded-2xl transition btn-bounce">
+      🏠
+    </button>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-xl mx-auto w-full flex-grow flex flex-col justify-center">
+    
+    <!-- Home View -->
+    <div id="viewHome" class="space-y-4">
+      <div class="glass-card rounded-3xl p-6 text-center shadow-2xl border border-white/40">
+        <h2 class="text-2xl font-bold text-indigo-950 mb-2">مرحباً بك يا بطل! 👋</h2>
+        <p class="text-slate-600 mb-6 font-semibold">اختر النمط المناسب للعب والتعلم اليوم</p>
+
+        <div class="grid grid-cols-1 gap-4">
+          <button onclick="switchView('grid')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg flex items-center justify-between transition btn-bounce">
+            <span class="text-lg">📊 جدول الضرب الشامل (1-10)</span>
+            <span class="text-2xl">➔</span>
+          </button>
+          
+          <button onclick="switchView('selectPractice')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg flex items-center justify-between transition btn-bounce">
+            <span class="text-lg">🎯 وضع التدريب (10 أسئلة)</span>
+            <span class="text-2xl">➔</span>
+          </button>
+
+          <button onclick="startChallenge()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg flex items-center justify-between transition btn-bounce">
+            <span class="text-lg">⚡ تحدي الـ 60 ثانية</span>
+            <span class="text-2xl">🔥</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Practice Selector -->
+    <div id="viewSelectPractice" class="hidden space-y-4">
+      <div class="glass-card rounded-3xl p-6 text-center shadow-2xl">
+        <h2 class="text-xl font-bold text-indigo-950 mb-4">اختر الجدول للتدرب عليه (10 أسئلة):</h2>
+        <div class="grid grid-cols-3 gap-3" id="tableButtons"></div>
+      </div>
+    </div>
+
+    <!-- Quiz View -->
+    <div id="viewQuiz" class="hidden space-y-4">
+      <div class="glass-card rounded-3xl p-6 shadow-2xl text-center relative overflow-hidden">
+        
+        <!-- Header Info -->
+        <div class="flex justify-between items-center mb-3 text-sm font-bold text-slate-500">
+          <span id="quizModeTitle" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full">تدريب</span>
+          <span id="quizCounter" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full">السؤال 1 من 10</span>
+        </div>
+
+        <!-- Timer Bar for Challenge -->
+        <div id="timerContainer" class="w-full bg-slate-200 h-3 rounded-full mb-4 hidden overflow-hidden">
+          <div id="timerBar" class="bg-amber-500 h-full w-full transition-all linear duration-1000"></div>
+        </div>
+
+        <!-- Question Box (السؤال باليمين والناتج باليسار) -->
+        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white my-4 shadow-inner flex items-center justify-between">
+          <div class="text-right">
+            <span class="text-slate-200 text-xs block font-bold mb-1">المسألة:</span>
+            <div class="text-4xl sm:text-5xl font-black tracking-wider" dir="ltr">
+              <span id="num1">2</span> × <span id="num2">3</span> =
+            </div>
+          </div>
+          <div class="text-left bg-white/20 px-5 py-3 rounded-2xl backdrop-blur-sm">
+            <span class="text-amber-300 text-4xl sm:text-5xl font-black">؟</span>
+          </div>
+        </div>
+
+        <!-- Options Grid -->
+        <div class="grid grid-cols-2 gap-3 my-4" id="optionsGrid"></div>
+
+      </div>
+    </div>
+
+    <!-- Result View -->
+    <div id="viewResult" class="hidden space-y-4">
+      <div class="glass-card rounded-3xl p-8 text-center shadow-2xl">
+        <span class="text-6xl mb-4 block">🏆</span>
+        <h2 class="text-3xl font-black text-indigo-950 mb-2">احسنت يا بطل!</h2>
+        <p class="text-slate-600 font-bold mb-6">لقد أنهيت التدريب بنجاح</p>
+        <div class="bg-indigo-50 rounded-2xl p-4 mb-6">
+          <span class="text-slate-500 block text-sm mb-1">النقاط التي حصلت عليها:</span>
+          <span id="resultScore" class="text-4xl font-black text-indigo-600">0</span>
+        </div>
+        <button onclick="switchView('home')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg btn-bounce">
+          العودة للرئيسية 🏠
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid View (جدول مفصل 1 إلى 10) -->
+    <div id="viewGrid" class="hidden space-y-4">
+      <div class="glass-card rounded-3xl p-4 shadow-2xl max-h-[75vh] overflow-y-auto">
+        <h2 class="text-center font-bold text-indigo-900 mb-4 text-xl">جدول الضرب الشامل (1 - 10)</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="gridDetailedContainer"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Web Audio API for Sound Effects
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'correct') {
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1); // A5
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      } else {
+        osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      }
+    }
+
+    let score = 0;
+    let currentQuizMode = 'practice';
+    let currentTable = 1;
+    let num1Val = 1, num2Val = 1;
+    let questionCount = 1;
+    let timerInterval = null;
+    let timeLeft = 60;
+
+    function switchView(view) {
+      clearInterval(timerInterval);
+      document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden'));
+      if (view === 'home') document.getElementById('viewHome').classList.remove('hidden');
+      if (view === 'selectPractice') {
+        renderTableButtons();
+        document.getElementById('viewSelectPractice').classList.remove('hidden');
+      }
+      if (view === 'quiz') document.getElementById('viewQuiz').classList.remove('hidden');
+      if (view === 'result') document.getElementById('viewResult').classList.remove('hidden');
+      if (view === 'grid') {
+        renderDetailedGrid();
+        document.getElementById('viewGrid').classList.remove('hidden');
+      }
+    }
+
+    function renderTableButtons() {
+      const container = document.getElementById('tableButtons');
+      container.innerHTML = '';
+      for (let i = 1; i <= 10; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-3 rounded-xl border border-indigo-200 text-lg btn-bounce';
+        btn.innerText = `جدول ${i}`;
+        btn.onclick = () => startPractice(i);
+        container.appendChild(btn);
+      }
+    }
+
+    function startPractice(tableNum) {
+      currentQuizMode = 'practice';
+      currentTable = tableNum;
+      questionCount = 1;
+      document.getElementById('quizModeTitle').innerText = `جدول ${tableNum}`;
+      document.getElementById('timerContainer').classList.add('hidden');
+      switchView('quiz');
+      generateQuestion();
+    }
+
+    function startChallenge() {
+      currentQuizMode = 'challenge';
+      questionCount = 1;
+      timeLeft = 60;
+      document.getElementById('quizModeTitle').innerText = 'تحدي 60 ثانية 🔥';
+      document.getElementById('timerContainer').classList.remove('hidden');
+      document.getElementById('timerBar').style.width = '100%';
+      switchView('quiz');
+      generateQuestion();
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        const percentage = (timeLeft / 60) * 100;
+        document.getElementById('timerBar').style.width = `${percentage}%`;
+        
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          finishQuiz();
+        }
+      }, 1000);
+    }
+
+    function generateQuestion() {
+      if (currentQuizMode === 'practice') {
+        num1Val = currentTable;
+        num2Val = questionCount; // بالتسلسل من 1 إلى 10
+        document.getElementById('quizCounter').innerText = `السؤال ${questionCount} من 10`;
+      } else {
+        num1Val = Math.floor(Math.random() * 10) + 1;
+        num2Val = Math.floor(Math.random() * 10) + 1;
+        document.getElementById('quizCounter').innerText = `السؤال ${questionCount}`;
+      }
+
+      document.getElementById('num1').innerText = num1Val;
+      document.getElementById('num2').innerText = num2Val;
+
+      const correctAnswer = num1Val * num2Val;
+      let options = [correctAnswer];
+
+      while (options.length < 4) {
+        let fake = (Math.floor(Math.random() * 10) + 1) * (Math.floor(Math.random() * 10) + 1);
+        if (!options.includes(fake)) options.push(fake);
+      }
+
+      options.sort(() => Math.random() - 0.5);
+
+      const grid = document.getElementById('optionsGrid');
+      grid.innerHTML = '';
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'bg-slate-100 hover:bg-slate-200 text-indigo-900 text-2xl font-black py-4 rounded-2xl border-2 border-slate-200 shadow btn-bounce transition-all';
+        btn.innerText = opt;
+        btn.onclick = () => checkAnswer(opt, correctAnswer, btn);
+        grid.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(selected, correct, element) {
+      if (selected === correct) {
+        playSound('correct');
+        element.classList.remove('bg-slate-100');
+        element.classList.add('bg-emerald-500', 'text-white');
+        score += 10;
+        document.getElementById('totalScore').innerText = score;
+        confetti({ particleCount: 25, spread: 50, origin: { y: 0.8 } });
+      } else {
+        playSound('wrong');
+        element.classList.remove('bg-slate-100');
+        element.classList.add('bg-rose-500', 'text-white');
+      }
+
+      setTimeout(() => {
+        if (currentQuizMode === 'practice' && questionCount >= 10) {
+          finishQuiz();
+        } else {
+          questionCount++;
+          generateQuestion();
+        }
+      }, 600);
+    }
+
+    function finishQuiz() {
+      clearInterval(timerInterval);
+      document.getElementById('resultScore').innerText = score;
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+      switchView('result');
+    }
+
+    function renderDetailedGrid() {
+      const container = document.getElementById('gridDetailedContainer');
+      container.innerHTML = '';
+      
+      for (let i = 1; i <= 10; i++) {
+        let card = document.createElement('div');
+        card.className = 'bg-indigo-50 border border-indigo-100 rounded-2xl p-4 shadow-sm';
+        
+        let title = `<h3 class="font-bold text-indigo-900 border-b border-indigo-200 pb-2 mb-2 text-center text-lg">جدول الضرب (${i})</h3>`;
+        let list = '<div class="space-y-1 text-center font-semibold text-slate-700" dir="ltr">';
+        
+        for (let j = 1; j <= 10; j++) {
+          list += `<div class="py-0.5">${i} × ${j} = <span class="text-indigo-600 font-bold">${i * j}</span></div>`;
+        }
+        list += 'div>';
+        
+        card.innerHTML = title + list;
+        container.appendChild(card);
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+        self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+        self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
+      `;
+      const blob = new Blob([swCode], { type: 'text/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+    }
+  </script>
+</body>
+</html>
