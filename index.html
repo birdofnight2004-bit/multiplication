@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>جدول الضرب التفاعلي</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; user-select: none; margin: 0; padding: 0; }
+    body { background: linear-gradient(135deg, #4f46e5, #7c3aed); min-height: 100vh; color: #1e293b; padding: 15px; display: flex; flex-direction: column; }
+    header { display: flex; justify-content: space-between; align-items: center; max-width: 500px; margin: 0 auto 20px; width: 100%; color: white; }
+    .score-badge { background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 1.2rem; }
+    .btn-home { background: rgba(255,255,255,0.2); border: none; font-size: 1.5rem; padding: 8px 12px; border-radius: 12px; cursor: pointer; color: white; }
+    main { max-width: 500px; margin: 0 auto; width: 100%; flex-grow: 1; }
+    .card { background: rgba(255,255,255,0.95); border-radius: 24px; padding: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 20px; }
+    .hidden { display: none !important; }
+    .btn-main { width: 100%; padding: 15px; margin: 8px 0; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: bold; color: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .btn-purple { background: #6366f1; }
+    .btn-green { background: #10b981; }
+    .btn-amber { background: #f59e0b; }
+    .grid-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
+    .btn-num { background: #f1f5f9; border: 2px solid #cbd5e1; padding: 12px; border-radius: 12px; font-size: 1.2rem; font-weight: bold; color: #4338ca; cursor: pointer; }
+    .question-box { background: linear-gradient(90deg, #4f46e5, #7c3aed); color: white; font-size: 2.5rem; font-weight: 900; padding: 20px; border-radius: 16px; margin: 15px 0; direction: ltr; }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .btn-option { background: #f8fafc; border: 2px solid #e2e8f0; padding: 15px; border-radius: 16px; font-size: 1.8rem; font-weight: bold; color: #1e1b4b; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+    th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: center; }
+    th { background: #4f46e5; color: white; }
+    .table-container { overflow-x: auto; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="score-badge">⭐ <span id="totalScore">0</span></div>
+    <h2 style="font-size: 1.4rem;">جدول الضرب (2 - 10)</h2>
+    <button class="btn-home" onclick="switchView('home')">🏠</button>
+  </header>
+
+  <main>
+    <!-- الرئيسية -->
+    <div id="viewHome" class="card">
+      <h2 style="margin-bottom: 10px;">مرحباً بك يا بطل! 👋</h2>
+      <p style="color: #64748b; margin-bottom: 20px;">اختر وضع اللعب للبدء:</p>
+      <button onclick="switchView('grid')" class="btn-main btn-purple"><span>📊 جدول الضرب الشامل</span><span>➔</span></button>
+      <button onclick="switchView('selectPractice')" class="btn-main btn-green"><span>🎯 وضع التدريب (جدول محدد)</span><span>➔</span></button>
+      <button onclick="startChallenge()" class="btn-main btn-amber"><span>⚡ تحدي الـ 60 ثانية</span><span>🔥</span></button>
+    </div>
+
+    <!-- اختيار الجدول -->
+    <div id="viewSelectPractice" class="card hidden">
+      <h3>اختر الجدول للتدرب عليه:</h3>
+      <div class="grid-btns" id="tableButtons"></div>
+    </div>
+
+    <!-- الأسئلة -->
+    <div id="viewQuiz" class="card hidden">
+      <div style="display: flex; justify-content: space-between; font-weight: bold; color: #64748b;">
+        <span id="quizModeTitle">تدريب</span>
+        <span id="quizCounter">السؤال 1</span>
+      </div>
+      <div class="question-box">
+        <span id="num1">2</span> × <span id="num2">3</span> = <span style="color: #fde047;">?</span>
+      </div>
+      <div class="options-grid" id="optionsGrid"></div>
+    </div>
+
+    <!-- الجدول الكامل -->
+    <div id="viewGrid" class="card hidden">
+      <h3>جدول الضرب من 2 إلى 10</h3>
+      <div class="table-container">
+        <table id="multiplicationTable"></table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let score = 0;
+    let currentQuizMode = 'practice';
+    let currentTable = 2;
+    let num1Val = 2, num2Val = 2;
+    let questionCount = 1;
+
+    function switchView(view) {
+      ['viewHome', 'viewSelectPractice', 'viewQuiz', 'viewGrid'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      if (view === 'home') document.getElementById('viewHome').classList.remove('hidden');
+      if (view === 'selectPractice') {
+        renderTableButtons();
+        document.getElementById('viewSelectPractice').classList.remove('hidden');
+      }
+      if (view === 'quiz') document.getElementById('viewQuiz').classList.remove('hidden');
+      if (view === 'grid') {
+        renderGrid();
+        document.getElementById('viewGrid').classList.remove('hidden');
+      }
+    }
+
+    function renderTableButtons() {
+      const container = document.getElementById('tableButtons');
+      container.innerHTML = '';
+      for (let i = 2; i <= 10; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'btn-num';
+        btn.innerText = `جدول ${i}`;
+        btn.onclick = () => startPractice(i);
+        container.appendChild(btn);
+      }
+    }
+
+    function startPractice(tableNum) {
+      currentQuizMode = 'practice';
+      currentTable = tableNum;
+      questionCount = 1;
+      document.getElementById('quizModeTitle').innerText = `جدول ${tableNum}`;
+      switchView('quiz');
+      generateQuestion();
+    }
+
+    function startChallenge() {
+      currentQuizMode = 'challenge';
+      questionCount = 1;
+      document.getElementById('quizModeTitle').innerText = 'تحدي عشوائي 🔥';
+      switchView('quiz');
+      generateQuestion();
+    }
+
+    function generateQuestion() {
+      if (currentQuizMode === 'practice') {
+        num1Val = currentTable;
+        num2Val = Math.floor(Math.random() * 9) + 2;
+      } else {
+        num1Val = Math.floor(Math.random() * 9) + 2;
+        num2Val = Math.floor(Math.random() * 9) + 2;
+      }
+
+      document.getElementById('num1').innerText = num1Val;
+      document.getElementById('num2').innerText = num2Val;
+      document.getElementById('quizCounter').innerText = `السؤال ${questionCount}`;
+
+      const correctAnswer = num1Val * num2Val;
+      let options = [correctAnswer];
+
+      while (options.length < 4) {
+        let fake = (Math.floor(Math.random() * 9) + 2) * (Math.floor(Math.random() * 9) + 2);
+        if (!options.includes(fake)) options.push(fake);
+      }
+
+      options.sort(() => Math.random() - 0.5);
+
+      const grid = document.getElementById('optionsGrid');
+      grid.innerHTML = '';
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-option';
+        btn.innerText = opt;
+        btn.onclick = () => checkAnswer(opt, correctAnswer, btn);
+        grid.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(selected, correct, element) {
+      if (selected === correct) {
+        element.style.background = '#10b981';
+        element.style.color = 'white';
+        score += 10;
+        document.getElementById('totalScore').innerText = score;
+      } else {
+        element.style.background = '#ef4444';
+        element.style.color = 'white';
+      }
+
+      setTimeout(() => {
+        questionCount++;
+        generateQuestion();
+      }, 500);
+    }
+
+    function renderGrid() {
+      const table = document.getElementById('multiplicationTable');
+      table.innerHTML = '';
+      let header = '<tr><th>×</th>';
+      for (let i = 2; i <= 10; i++) header += `<th>${i}</th>`;
+      header += '</tr>';
+      table.innerHTML += header;
+
+      for (let i = 2; i <= 10; i++) {
+        let row = `<tr><th style="background:#e0e7ff; color:#3730a3;">${i}</th>`;
+        for (let j = 2; j <= 10; j++) {
+          row += `<td>${i * j}</td>`;
+        }
+        row += '</tr>';
+        table.innerHTML += row;
+      }
+    }
+  </script>
+</body>
+</html>
